@@ -18,28 +18,35 @@
 #if (defined(_DEBUG) || defined(GIT_ASSERT_HARD)) && GIT_ASSERT_HARD != 0
 # define GIT_ASSERT(expr) assert(expr)
 # define GIT_ASSERT_ARG(expr) assert(expr)
+
+# define GIT_ASSERT_EXT(expr, fail) assert(expr)
+# define GIT_ASSERT_ARG_EXT(expr, fail) assert(expr)
 #else
+
+/** Internal consistency check to stop the function. */
+# define GIT_ASSERT(expr) GIT_ASSERT_EXT(expr, return -1);
 
 /**
  * Assert that a consumer-provided argument is valid, setting an
  * actionable error message and returning -1 if it is not.
  */
-# define GIT_ASSERT_ARG(expr) do { \
-		if (!(expr)) { \
-			git_error_set(GIT_ERROR_INVALID, \
-				"invalid argument: '%s'", \
-				#expr); \
-			return -1; \
-		} \
-	} while(0)
+# define GIT_ASSERT_ARG(expr) GIT_ASSERT_ARG_EXT(expr, return -1);
 
-/* Internal consistency check to stop the function. */
-# define GIT_ASSERT(expr) do { \
+/** Internal consistency check to invoke the `fail` param on failure. */
+# define GIT_ASSERT_EXT(expr, fail) \
+	GIT_ASSERT__EXT(expr, GIT_ERROR_INTERNAL, "unrecoverable internal error", fail)
+
+/**
+ * Assert that a consumer-provided argument is valid, setting an
+ * actionable error message and running the `fail` param if not.
+ */
+# define GIT_ASSERT_ARG_EXT(expr, fail) \
+	GIT_ASSERT__EXT(expr, GIT_ERROR_INVALID, "invalid argument", fail)
+
+# define GIT_ASSERT__EXT(expr, code, msg, fail) do { \
 		if (!(expr)) { \
-			git_error_set(GIT_ERROR_INTERNAL, \
-				"unrecoverable internal error: '%s'", \
-				#expr); \
-			return -1; \
+			git_error_set(code, "%s: '%s'", msg, #expr); \
+			fail; \
 		} \
 	} while(0)
 
