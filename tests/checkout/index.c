@@ -96,7 +96,7 @@ void test_checkout_index__can_disable_pathspec_match(void)
 	git_checkout_options g_opts = GIT_CHECKOUT_OPTIONS_INIT;
 	git_object *g_object;
 
-	char *files_to_checkout[] = { "test11.txt", "test12.txt"};
+	char *files_to_checkout[] = { "test10.txt", "test11.txt"};
 	size_t files_to_checkout_size = 2;
 
 	/* reset to beginning of history (i.e. just a README file) */
@@ -113,10 +113,10 @@ void test_checkout_index__can_disable_pathspec_match(void)
 	cl_git_pass(git_repository_index(&index, g_repo));
 
 	/* We create 4 files and commit them */
-	cl_git_mkfile("testrepo/test9.txt", "original\n");
-	cl_git_mkfile("testrepo/test10.txt", "original\n");
-	cl_git_mkfile("testrepo/test11.txt", "original\n");
-	cl_git_mkfile("testrepo/test12.txt", "original\n");
+	cl_git_mkfile("./testrepo/test9.txt", "original\n");
+	cl_git_mkfile("./testrepo/test10.txt", "original\n");
+	cl_git_mkfile("./testrepo/test11.txt", "original\n");
+	cl_git_mkfile("./testrepo/test12.txt", "original\n");
 
 	cl_git_pass(git_index_add_bypath(index, "test9.txt"));
 	cl_git_pass(git_index_add_bypath(index, "test10.txt"));
@@ -127,14 +127,14 @@ void test_checkout_index__can_disable_pathspec_match(void)
 	cl_repo_commit_from_index(&commit_id, g_repo, NULL, 0, "commit our test files");
 
 	/* We modify the content of all 4 of our files */
-	cl_git_rewritefile("testrepo/test9.txt", "modified\n");
-	cl_git_rewritefile("testrepo/test10.txt", "modified\n");
-	cl_git_rewritefile("testrepo/test11.txt", "modified\n");
-	cl_git_rewritefile("testrepo/test12.txt", "modified\n");
+	cl_git_rewritefile("./testrepo/test9.txt", "modified\n");
+	cl_git_rewritefile("./testrepo/test10.txt", "modified\n");
+	cl_git_rewritefile("./testrepo/test11.txt", "modified\n");
+	cl_git_rewritefile("./testrepo/test12.txt", "modified\n");
 
 	/* We checkout only test10.txt and test11.txt */
 	g_opts.checkout_strategy =
-		GIT_CHECKOUT_FORCE | GIT_CHECKOUT_REMOVE_UNTRACKED |
+		GIT_CHECKOUT_FORCE |
 		GIT_CHECKOUT_DISABLE_PATHSPEC_MATCH;
 	g_opts.paths.strings = files_to_checkout;
 	g_opts.paths.count = files_to_checkout_size;
@@ -142,10 +142,10 @@ void test_checkout_index__can_disable_pathspec_match(void)
 
 	/* The only files that have been reverted to their original content
 	   should be test10.txt and test11.txt */
-	check_file_contents("testrepo/test9.txt", "modified\n");
-	check_file_contents("testrepo/test10.txt", "original\n");
-	check_file_contents("testrepo/test11.txt", "original\n");
-	check_file_contents("testrepo/test12.txt", "modified\n");
+	check_file_contents("./testrepo/test9.txt", "modified\n");
+	check_file_contents("./testrepo/test10.txt", "original\n");
+	check_file_contents("./testrepo/test11.txt", "original\n");
+	check_file_contents("./testrepo/test12.txt", "modified\n");
 }
 
 void test_checkout_index__honor_the_specified_pathspecs(void)
