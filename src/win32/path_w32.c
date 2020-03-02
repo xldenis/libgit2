@@ -82,9 +82,10 @@ static wchar_t *path__skip_prefix(wchar_t *path)
 int git_win32_path_canonicalize(git_win32_path path)
 {
 	wchar_t *base, *from, *to, *next;
-	size_t len;
+	size_t len, has_prefix = 0, segments = 0;
 
 	base = to = path__skip_prefix(path);
+	has_prefix = (path != to);
 
 	/* Unposixify if the prefix */
 	for (from = path; from < to; from++) {
@@ -93,6 +94,7 @@ int git_win32_path_canonicalize(git_win32_path path)
 	}
 
 	while (*from) {
+		/* Find the next directory separator */
 		for (next = from; *next; ++next) {
 			if (*next == L'/') {
 				*next = L'\\';
@@ -105,21 +107,39 @@ int git_win32_path_canonicalize(git_win32_path path)
 
 		len = next - from;
 
-		if (len == 1 && from[0] == L'.')
-			/* do nothing with singleton dot */;
+		/* Suppress a single dot in a segment */
+		if (len == 1 && from[0] == L'.') {
+			;
+		}
 
-		else if (len == 2 && from[0] == L'.' && from[1] == L'.') {
+		/*
+		 * Handle ".." segments in absolute paths and those that indicate that we
+		 * back up over existing segments.  (ie, convert "foo\..\bar" to "bar")
+		 * This is all ".." segments except those at the beginning of relative
+		 * paths, which we retain literally below.  (ie, keep "..\foo" untouched)
+		 */
+		else if ((has_prefix || segments) && len == 2 && from[0] == L'.' && from[1] == L'.') {
+			/* Remove "../" after prefix (eg, "C:\..\foo") */
 			if (to == base) {
-				/* Skip over leading "../" */
 				if (*next == L'\\')
 					len++;
-				to += len;
-			} else {
-				/* back up a path segment */
+				base = to;
+			}
+
+			/* Back up a path segment */
+			else {
 				while (to > base && to[-1] == L'\\') to--;
 				while (to > base && to[-1] != L'\\') to--;
+				segments--;
 			}
-		} else {
+		}
+
+		/* Segments and ".." at the beginning of a relative path */
+		else {
+			/* Count the non-".." segments */
+			if (len && (len != 2 || from[0] != L'.' || from[1] != L'.'))
+				segments++;
+
 			if (*next == L'\\' && *from != L'\\')
 				len++;
 
