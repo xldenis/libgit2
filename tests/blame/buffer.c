@@ -17,6 +17,18 @@ void test_blame_buffer__cleanup(void)
 	git_repository_free(g_repo);
 }
 
+void test_blame_buffer__segfault(void)
+{
+	const git_blame_hunk * hunk;
+	const char * buffer = "Hello\nWorld!";
+
+	cl_git_pass(git_repository_open(&g_repo, cl_fixture("blame-segv.git")));
+	cl_git_pass(git_blame_file(&g_fileblame, g_repo, "file.txt", NULL));
+
+	cl_git_pass(git_blame_buffer(&g_bufferblame, g_fileblame, buffer, strlen(buffer)));
+	cl_assert_equal_i(2, git_blame_get_hunk_count(g_bufferblame));
+
+}
 void test_blame_buffer__added_line(void)
 {
 	const git_blame_hunk *hunk;
